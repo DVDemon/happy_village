@@ -25,7 +25,10 @@ include_directories(${Boost_INCLUDE_DIR})
 link_directories("/usr/local/lib")
 
 add_executable(${SERVER_BINARY} main.cpp 
-                                )
+                                config/config.cpp
+                                database/database.cpp
+                                database/cache.cpp
+                                database/person.cpp)
 
 target_include_directories(${SERVER_BINARY} PRIVATE "${CMAKE_BINARY_DIR}")
 target_compile_options(${SERVER_BINARY} PRIVATE -Wall -Wextra -pedantic -Werror )
@@ -35,7 +38,10 @@ target_link_libraries(${SERVER_BINARY} PRIVATE
                              ${Poco_LIBRARIES}
                              "libPocoData.so"
                              "libPocoDataMySQL.so"
-                             "libmysqlclient.so"                            
+                             "libmysqlclient.so"
+                             "libignite-binary.so"
+                             "libignite-common.so"
+                             "libignite-thin-client.so"                            
                              "rdkafka++"
                              CppKafka::cppkafka
                              ZLIB::ZLIB
