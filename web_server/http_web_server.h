@@ -68,22 +68,11 @@ protected:
         ServerApplication::defineOptions(options);
 
         options.addOption(
-            Option("help", "h", "display argument help information")
-                .required(false)
-                .repeatable(false)
-                .callback(OptionCallback<HTTPWebServer>(this, &HTTPWebServer::handleHelp)));
-        options.addOption(
-            Option("read", "r", "set ip address for read requests")
+            Option("host", "h", "set ip address for database")
                 .required(false)
                 .repeatable(false)
                 .argument("value")
-                .callback(OptionCallback<HTTPWebServer>(this, &HTTPWebServer::handleReadIP)));
-        options.addOption(
-            Option("write", "w", "set ip address for write requests")
-                .required(false)
-                .repeatable(false)
-                .argument("value")
-                .callback(OptionCallback<HTTPWebServer>(this, &HTTPWebServer::handleWriteIP)));
+                .callback(OptionCallback<HTTPWebServer>(this, &HTTPWebServer::handleHost)));
         options.addOption(
             Option("port", "po", "set mysql port")
                 .required(false)
@@ -145,6 +134,14 @@ protected:
         std::cout << "login:" << value << std::endl;
         Config::get().login() = value;
     }
+
+    void handleHost([[maybe_unused]] const std::string &name,
+                     [[maybe_unused]] const std::string &value)
+    {
+        std::cout << "host:" << value << std::endl;
+        Config::get().read_request_ip() = value;
+        Config::get().write_request_ip() = value;
+    }
     void handlePassword([[maybe_unused]] const std::string &name,
                         [[maybe_unused]] const std::string &value)
     {
@@ -164,21 +161,6 @@ protected:
         std::cout << "port:" << value << std::endl;
         Config::get().port() = value;
     }
-
-    void handleReadIP([[maybe_unused]] const std::string &name,
-                      [[maybe_unused]] const std::string &value)
-    {
-        std::cout << "read_ip:" << value << std::endl;
-        Config::get().read_request_ip() = value;
-    }
-
-    void handleWriteIP([[maybe_unused]] const std::string &name,
-                       [[maybe_unused]] const std::string &value)
-    {
-        std::cout << "write_ip:" << value << std::endl;
-        Config::get().write_request_ip() = value;
-    }
-
     void handleQueueHost([[maybe_unused]] const std::string &name,
                        [[maybe_unused]] const std::string &value)
     {
@@ -200,18 +182,7 @@ protected:
         Config::get().cache_servers() = value;
     }
 
-    void handleHelp([[maybe_unused]] const std::string &name,
-                    [[maybe_unused]] const std::string &value)
-    {
-        HelpFormatter helpFormatter(options());
-        helpFormatter.setCommand(commandName());
-        helpFormatter.setUsage("OPTIONS");
-        helpFormatter.setHeader(
-            "A web server that serves the current date and time.");
-        helpFormatter.format(std::cout);
-        stopOptionsProcessing();
-        _helpRequested = true;
-    }
+
 
     int main([[maybe_unused]] const std::vector<std::string> &args)
     {
@@ -224,7 +195,7 @@ protected:
                 config().getString("HTTPWebServer.format",
                                    DateTimeFormat::SORTABLE_FORMAT));
 
-            database::Person::warm_up_cache();
+            //database::Person::warm_up_cache();
             
             ServerSocket svs(Poco::Net::SocketAddress("0.0.0.0", port));
             HTTPServer srv(new HTTPRequestFactory(format),

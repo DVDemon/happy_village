@@ -40,7 +40,7 @@ using Poco::Util::HelpFormatter;
 
 #include "handlers/web_page_handler.h"
 #include "handlers/person_handler.h"
-
+#include "handlers/capture_handler.h"
 
 static bool startsWith(const std::string& str, const std::string& prefix)
 {
@@ -59,9 +59,11 @@ public:
     HTTPRequestHandler* createRequestHandler(
         const HTTPServerRequest& request)
     {
-        static std::string html=".html"; 
-        static std::string author="/aperson"; 
+        static const std::string html=".html"; 
+        static const std::string author="/person"; 
+        static const std::string capture="/capture"; 
         if (request.getURI().find(html)!=std::string::npos)     return new WebPageHandler(_format);
+        if (startsWith(request.getURI(),capture))     return new CaptureHandler(_format);
         if (startsWith(request.getURI(),author)) return new PersonHandler(_format);
         return 0;
     }
