@@ -85,21 +85,13 @@ public:
 
         response.setChunkedTransferEncoding(true);
         response.setContentType("image/jpeg");
-        cv::imwrite("buffer.jpeg", img);
-
-        std::ifstream file( "buffer.jpeg", std::ios::binary );
-        std::vector<char> buffer(std::istreambuf_iterator<char>(file), {});
-        /*if (file.is_open()){
-            while (file.good()){
-                int sign = file.get();
-                if(sign>0)
-                ostr <<  (unsigned char)sign;
-            } 
-            file.close();*/
-        std::cout << buffer.size() << std::endl;
-        ostr.write(buffer.data(),buffer.size());
-        //} else std::cerr << "cant open file" << std::endl;
-
+        
+        std::vector<unsigned char> buffer;//buffer for coding
+        std::vector<int> param(2);
+        param[0] = cv::IMWRITE_JPEG_QUALITY;
+        param[1] = 80;//default(95) 0-100
+        cv::imencode(".jpg", img, buffer, param);
+        ostr.write((const char*)buffer.data(),buffer.size());
         
     }
 
