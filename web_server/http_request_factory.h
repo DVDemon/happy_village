@@ -18,6 +18,7 @@
 #include "Poco/Util/Option.h"
 #include "Poco/Util/OptionSet.h"
 #include "Poco/Util/HelpFormatter.h"
+#include "Poco/NotificationQueue.h"
 #include <iostream>
 
 using Poco::Net::ServerSocket;
@@ -51,8 +52,8 @@ static bool startsWith(const std::string& str, const std::string& prefix)
 class HTTPRequestFactory: public HTTPRequestHandlerFactory
 {
 public:
-    HTTPRequestFactory(const std::string& format):
-        _format(format)
+    HTTPRequestFactory(const std::string& format,Poco::NotificationQueue &queue):
+        _format(format),_queue(queue)
     {
     }
 
@@ -63,13 +64,14 @@ public:
         static const std::string author="/person"; 
         static const std::string capture="/capture"; 
         if (request.getURI().find(html)!=std::string::npos)     return new WebPageHandler(_format);
-        if (startsWith(request.getURI(),capture))     return new CaptureHandler(_format);
+        if (startsWith(request.getURI(),capture))     return new CaptureHandler(_format,_queue);
         if (startsWith(request.getURI(),author)) return new PersonHandler(_format);
         return 0;
     }
 
 private:
     std::string _format;
+    Poco::NotificationQueue &_queue;
 };
 
 #endif

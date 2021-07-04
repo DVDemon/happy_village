@@ -32,7 +32,8 @@ add_executable(${SERVER_BINARY} main.cpp
                                 config/config.cpp
                                 database/database.cpp
                                 database/cache.cpp
-                                database/person.cpp)
+                                database/person.cpp
+                                capture/capture_service.cpp)
 
 target_include_directories(${SERVER_BINARY} PRIVATE "${CMAKE_BINARY_DIR}")
 target_compile_options(${SERVER_BINARY} PRIVATE -Wall -Wextra -pedantic -Werror )

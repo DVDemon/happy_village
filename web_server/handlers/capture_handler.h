@@ -18,12 +18,11 @@
 #include "Poco/Util/Option.h"
 #include "Poco/Util/OptionSet.h"
 #include "Poco/Util/HelpFormatter.h"
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>
+#include "Poco/NotificationQueue.h"
+
 #include <iostream>
-#include <fstream>
 #include <vector>
+#include <thread>
 
 using Poco::Net::ServerSocket;
 using Poco::Net::HTTPRequestHandler;
@@ -43,10 +42,11 @@ using Poco::Util::OptionSet;
 using Poco::Util::OptionCallback;
 using Poco::Util::HelpFormatter;
 
+#include "../../capture/capture_service.h"
 class CaptureHandler: public HTTPRequestHandler
 {
 public:
-    CaptureHandler(const std::string& format): _format(format)
+    CaptureHandler(const std::string& format,Poco::NotificationQueue &queue): _format(format),_queue(queue)
     {
     }
 
@@ -58,44 +58,25 @@ public:
 
         std::ostream& ostr = response.send();
 
+        std::shared_ptr<CapturePayload> pl(new CapturePayload());
 
-        cv::VideoCapture cap(0); // open the default camera
-        if(!cap.isOpened())  // check if we succeeded
-        {
-            std::cout << "Could capture" << std::endl;
-            response.setChunkedTransferEncoding(true);
-            response.setContentType("text/html");
-            ostr << "<html><body><h1>open camera error</h1></body></html" <<std::endl;
-            return;
-        }
+        _queue.enqueueNotification(new CapturePhotoNotification(pl));
 
 
-        cv::Mat img;
-
-        cap >> img;
-    
-        if(img.empty())
-        {
-            std::cout << "Could capture" << std::endl;
-            response.setChunkedTransferEncoding(true);
-            response.setContentType("text/html");
-            ostr << "<html><body><h1>capture error</h1></body></html" <<std::endl;
-            return ;
-        }
-
-        response.setChunkedTransferEncoding(true);
-        response.setContentType("image/jpeg");
-        
-        std::vector<unsigned char> buffer;//buffer for coding
-        std::vector<int> param(2);
-        param[0] = cv::IMWRITE_JPEG_QUALITY;
-        param[1] = 80;//default(95) 0-100
-        cv::imencode(".jpg", img, buffer, param);
-        ostr.write((const char*)buffer.data(),buffer.size());
+        while(pl->state==0) std::this_thread::yield();
+       
+        if(pl->state==1)
+            ostr.write((const char*)pl->buffer.data(),pl->buffer.size());
+            else 
+            {
+                response.setContentType("text/html");
+                ostr << "<html><body>Error capture photo</body><html" << std::endl;
+            }
         
     }
 
 private:
     std::string _format;
+    Poco::NotificationQueue &_queue;
 };
 #endif // !CAPTUREHANDLER_H

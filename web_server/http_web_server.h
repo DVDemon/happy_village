@@ -40,7 +40,7 @@ using Poco::Util::ServerApplication;
 #include "http_request_factory.h"
 #include "../config/config.h"
 #include "../database/person.h"
-
+#include "../capture/capture_service.h"
 
 class HTTPWebServer : public Poco::Util::ServerApplication
 {
@@ -196,12 +196,19 @@ protected:
                                    DateTimeFormat::SORTABLE_FORMAT));
 
             //database::Person::warm_up_cache();
+
+            Poco::NotificationQueue queue;
+            CaptureService service(queue);
+
+            Poco::ThreadPool::defaultPool().start(service);
             
             ServerSocket svs(Poco::Net::SocketAddress("0.0.0.0", port));
-            HTTPServer srv(new HTTPRequestFactory(format),
+            HTTPServer srv(new HTTPRequestFactory(format,queue),
                            svs, new HTTPServerParams);
             srv.start();
+            std::cout << "[+] Http service started on port:" << port << std::endl;
             waitForTerminationRequest();
+            Poco::ThreadPool::defaultPool().joinAll();
             srv.stop();
         }
         return Application::EXIT_OK;
